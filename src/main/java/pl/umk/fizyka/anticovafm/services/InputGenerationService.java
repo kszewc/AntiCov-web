@@ -1,7 +1,7 @@
 package pl.umk.fizyka.anticovafm.services;
 
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,8 +42,6 @@ public class InputGenerationService {
         templateInput.transferTo(tempDirectory.resolve("templateInput"));
         templateRun.transferTo(tempDirectory.resolve("templateRun"));
 
-        System.out.println(tempDirectory);
-
         // Call python converter
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.directory(tempDirectory.toFile());
@@ -58,16 +56,18 @@ public class InputGenerationService {
         FileOutputStream fos = new FileOutputStream(tempDirectory.resolve("output.zip").toString());
         ZipOutputStream zipOut = new ZipOutputStream(fos);
         File fileToZip = tempDirectory.resolve("output").toFile();
-
         zipFile(fileToZip, fileToZip.getName(), zipOut);
         zipOut.close();
         fos.close();
 
-        // Return the results
-        Resource resource = new UrlResource(tempDirectory.resolve("output.zip").toUri());
+        // Read compressed file to memory
+        byte[] array = Files.readAllBytes(tempDirectory.resolve("output.zip"));
+        ByteArrayResource resource = new ByteArrayResource(array);
 
-        //FileSystemUtils.deleteRecursively(tempDirectory);
+        // Remove temporary directory
+        FileSystemUtils.deleteRecursively(tempDirectory);
 
+        // Returns
         return resource;
     }
 
